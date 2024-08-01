@@ -1,5 +1,10 @@
 ```hcl
-# Use the VPC module to create a VPC
+# Define AWS provider
+provider "aws" {
+  region = "us-east-1" # Replace with your desired region
+}
+
+# Use VPC module
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 3.0"
@@ -15,7 +20,7 @@ module "vpc" {
   enable_vpn_gateway = true
 }
 
-# Use the S3 Bucket module to create an S3 bucket
+# Use S3 bucket module
 module "s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
@@ -24,15 +29,15 @@ module "s3_bucket" {
   acl    = "private"
 }
 
-# Use the EC2 Instance module to create an EC2 instance
+# Use EC2 instance module
 module "ec2_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "~> 3.0"
+  version = "~> 4.0"
 
   name = "my-ec2-instance"
 
   instance_type = "t2.micro"
-  ami           = "ami-0747bdcabd34c712a" # Replace with your desired AMI ID
+  ami           = "ami-0747bdcabd34c712a" # Replace with your desired AMI
   key_name      = "my-key-pair"            # Replace with your key pair name
 
   vpc_security_group_ids = [module.vpc.default_security_group_id]
@@ -44,34 +49,40 @@ module "ec2_instance" {
               EOF
 }
 
-# Use the CloudWatch module to create a CloudWatch resource
-module "cloudwatch" {
-  source  = "terraform-aws-modules/cloudwatch/aws"
-  version = "~> 2.0"
-
-  log_group_name = "my-log-group"
+# Use CloudWatch module
+resource "aws_cloudwatch_log_group" "my_log_group" {
+  name = "my-log-group"
 }
 
-# Define resources for event trigger, file processing, and summary/PDF generation
-resource "aws_lambda_function" "event_trigger" {
-  # ... Lambda function configuration for event trigger
+# Define output values
+output "vpc_id" {
+  description = "VPC ID"
+  value       = module.vpc.vpc_id
 }
 
-resource "aws_lambda_function" "file_processing" {
-  # ... Lambda function configuration for file processing
+output "s3_bucket_id" {
+  description = "S3 Bucket ID"
+  value       = module.s3_bucket.s3_bucket_id
 }
 
-resource "aws_lambda_function" "summary_pdf_generation" {
-  # ... Lambda function configuration for summary/PDF generation
+output "ec2_instance_id" {
+  description = "EC2 Instance ID"
+  value       = module.ec2_instance.id
+}
+
+output "cloudwatch_log_group_name" {
+  description = "CloudWatch Log Group Name"
+  value       = aws_cloudwatch_log_group.my_log_group.name
 }
 ```
 
-This Terraform code creates the following resources:
+This Terraform code defines an AWS provider and uses several modules to create resources based on the architecture diagram:
 
-1. A VPC with public and private subnets, NAT Gateway, and VPN Gateway using the `terraform-aws-modules/vpc/aws` module.
-2. An S3 bucket with private ACL using the `terraform-aws-modules/s3-bucket/aws` module.
-3. An EC2 instance in the private subnet of the VPC using the `terraform-aws-modules/ec2-instance/aws` module.
-4. A CloudWatch log group using the `terraform-aws-modules/cloudwatch/aws` module.
-5. Three Lambda functions for event trigger, file processing, and summary/PDF generation (configurations not included).
+1. **VPC Module**: Creates a VPC with public and private subnets, NAT Gateway, and VPN Gateway.
+2. **S3 Bucket Module**: Creates an S3 bucket with private access control.
+3. **EC2 Instance Module**: Creates an EC2 instance in one of the private subnets, with a user data script to write a "Hello, World!" message to a file.
+4. **CloudWatch Log Group**: Creates a CloudWatch Log Group for logging purposes.
 
-Note: You will need to replace the placeholders (e.g., AMI ID, key pair name) with your desired values and provide the necessary configurations for the Lambda functions.
+The output values provide the IDs and names of the created resources for reference.
+
+Note: You may need to adjust the configuration values (e.g., region, AMI, key pair name) according to your specific requirements. Additionally, you might need to add additional resources or modules based on the architecture diagram's components.
